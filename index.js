@@ -28,6 +28,8 @@ class CommandParser {
             return null;
         }
         let {
+            hasMissingArgs,
+            missingArgs,
             hasInvalidArgs,
             hasHelpArg,
             invalidArgs,
@@ -39,6 +41,8 @@ class CommandParser {
             invalidArgMessage += '\n' + this.createInvalidArgMessage(invalidArgs);
         }
         return {
+            hasMissingArgs,
+            missingArgs,
             hasInvalidArgs,
             hasHelpArg,
             invalidArgMessage,
@@ -79,20 +83,23 @@ class CommandParser {
                 let flagArgument = remainingArgs.shift();
                 options[optionConfig.name] = flagArgument;
 
-                if (optionConfig.validator) {
-                    if (!optionConfig.validator(flagArgument)) {
-                        hasInvalidArgs = true;
-                        invalidArgs.push(
-                            {arg, reason: 'Validation failed: ' + flagArgument + ' ' + optionConfig.validationMessage}
-                        );
-                    }
+                if (optionConfig.validator && !optionConfig.validator(flagArgument)) {
+                    hasInvalidArgs = true;
+                    invalidArgs.push(
+                        {arg, reason: 'Validation failed: ' + flagArgument + ' ' + optionConfig.validationMessage}
+                    );
                 }
 
             } else {
                 options[optionConfig.name] = true;
             }
+
         }
+        let optionNames = Object.keys(options);
+        let missingArgs = optionConfigs.filter(config => !(config.optional || optionNames.includes( config.name)));
         return {
+            hasMissingArgs: missingArgs.length > 0,
+            missingArgs,
             options,
             hasInvalidArgs,
             invalidArgs,
@@ -134,11 +141,11 @@ class CommandParser {
     }
 
     createHelpMessageFromOptions(options) {
-        return 'command options' + options.map(option => option.name).join(' ');
+        return 'command options: ' + options.map(option => option.shortFlag + " <" + option.name + ">").join(' ');
     }
 
     createInvalidArgMessage(invalidArgs) {
-        return invalidArgs.map(obj => 'Arg: ' + obj.arg + '  Reason: ' + obj.reason).join('\n');
+        return invalidArgs.map(obj => 'Invalid Arg. Arg: ' + obj.arg + '  Reason: ' + obj.reason).join('\n');
     }
 }
 
