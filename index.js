@@ -141,7 +141,7 @@ class CommandParser {
     }
 
     createHelpMessageFromOptions(options) {
-        return 'command options: ' + options.map(option => option.shortFlag + " <" + option.name + ">").join(' ');
+        return 'Command options: ' + options.map(option => option.shortFlag + " <" + option.name + ">").join(' ');
     }
 
     createInvalidArgMessage(invalidArgs) {
