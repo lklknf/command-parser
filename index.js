@@ -56,11 +56,13 @@ class CommandParser {
         let remainingArgs = args;
         let optionConfigsByShortFlag = utils.normalize(optionConfigs.filter(hasShortFlag), 'shortFlag');
         let optionConfigsByLongFlag = utils.normalize(optionConfigs.filter(hasLongFlag), 'longFlag');
+        let [flaglessOptionConfig] = optionConfigs.filter(optionConfig => optionConfig.flagless === true);
         let hasHelpArg = false;
         let hasInvalidArgs = false;
         let invalidArgs = [];
         let options = {};
         while (remainingArgs.length > 0) {
+            let isLastOption = remainingArgs.length === 1;
             let arg = remainingArgs.shift();
 
             if (arg === '--help') {
@@ -70,11 +72,20 @@ class CommandParser {
 
             let optionConfig = optionConfigsByShortFlag[arg] || optionConfigsByLongFlag[arg];
 
-            if (!optionConfig) {
+            if (!optionConfig && !(isLastOption && flaglessOptionConfig)) {
                 hasInvalidArgs = true;
                 invalidArgs.push(
                     {arg, reason: 'no such option specified'}
                 );
+                continue;
+            } else if (!optionConfig && isLastOption && flaglessOptionConfig) {
+                options[flaglessOptionConfig.name] = arg;
+                if (flaglessOptionConfig.validator && !flaglessOptionConfig.validator(arg)) {
+                    hasInvalidArgs = true;
+                    invalidArgs.push(
+                        {arg, reason: 'Validation failed: ' + arg + ' ' + flaglessOptionConfig.validationMessage}
+                    );
+                }
                 continue;
             }
 
@@ -96,7 +107,7 @@ class CommandParser {
 
         }
         let optionNames = Object.keys(options);
-        let missingArgs = optionConfigs.filter(config => !(config.optional || optionNames.includes( config.name)));
+        let missingArgs = optionConfigs.filter(config => !(config.optional || optionNames.includes(config.name)));
         return {
             hasMissingArgs: missingArgs.length > 0,
             missingArgs,
@@ -141,7 +152,7 @@ class CommandParser {
     }
 
     createHelpMessageFromOptions(options) {
-        return 'Command options: ' + options.map(option => option.shortFlag + " <" + option.name + ">").join(' ');
+        return 'Command options: ' + options.map(option => option.shortFlag + ' <' + option.name + '>').join(' ');
     }
 
     createInvalidArgMessage(invalidArgs) {
