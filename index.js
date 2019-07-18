@@ -72,21 +72,24 @@ class CommandParser {
 
             let optionConfig = optionConfigsByShortFlag[arg] || optionConfigsByLongFlag[arg];
 
-            if (!optionConfig && !(isLastOption && flaglessOptionConfig)) {
+            if (!optionConfig && !flaglessOptionConfig) {
                 hasInvalidArgs = true;
                 invalidArgs.push(
                     {arg, reason: 'no such option specified'}
                 );
                 continue;
-            } else if (!optionConfig && isLastOption && flaglessOptionConfig) {
+            } else if (!optionConfig && flaglessOptionConfig) {
+                arg = [arg, ...remainingArgs].join(' ');
+                remainingArgs = [];
                 options[flaglessOptionConfig.name] = arg;
+
                 if (flaglessOptionConfig.validator && !flaglessOptionConfig.validator(arg)) {
                     hasInvalidArgs = true;
                     invalidArgs.push(
                         {arg, reason: 'Validation failed: ' + arg + ' ' + flaglessOptionConfig.validationMessage}
                     );
                 }
-                continue;
+                break;
             }
 
 
