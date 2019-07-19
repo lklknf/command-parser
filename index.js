@@ -3,13 +3,33 @@ const {hasLongFlag} = require('./command');
 const {hasShortFlag} = require('./command');
 
 class CommandParser {
-    constructor(config) {
-        let {version, options, commands} = config;
+    constructor(config = {}) {
+        this.getHelpMessage = this.getHelpMessage.bind(this);
+        this.setConfig = this.setConfig.bind(this);
+        this.parseInput = this.parseInput.bind(this);
+        this.commandConfigs = [];
+        this.commandConfigsMap = {};
+        this.setConfig(config);
+    }
+
+    setConfig(config){
+        let {version, options, commands = []} = config;
         this.version = version;
         this.options = options;
-        this.commandConfigs = this.initCommandConfigs(commands);
+        this.addCommands(commands);
+    }
+
+    addCommands(commands){
+        this.commandConfigs.push(...this.initCommandConfigs(commands));
         this.commandConfigsMap = utils.normalize(this.commandConfigs, 'name');
-        this.helpMessage = this.createHelpMessage(config);
+    }
+
+    getHelpMessage(){
+        let helpString = 'Help:\n';
+        if (Array.isArray(this.commandConfigs)) {
+            helpString += this.commandConfigs.map(command => command.name).join('\n');
+        }
+        return helpString;
     }
 
     parseInput(args) {
@@ -146,21 +166,15 @@ class CommandParser {
         };
     }
 
-    createHelpMessage(config = {}) {
-        let helpString = 'Help:\n';
-        if (Array.isArray(config.commands)) {
-            helpString += config.commands.map(command => command.name).join('\n');
-        }
-        return helpString;
-    }
 
     createHelpMessageFromOptions(options) {
-        return 'Command options: ' + options.map(option => option.shortFlag + ' <' + option.name + '>').join(' ');
+        return 'Command options: ' + options.map(option => option.shortFlag || '' + ' <' + option.name + '>').join(' ');
     }
 
     createInvalidArgMessage(invalidArgs) {
         return invalidArgs.map(obj => 'Invalid Arg. Arg: ' + obj.arg + '  Reason: ' + obj.reason).join('\n');
     }
+
 }
 
 module.exports = CommandParser;
