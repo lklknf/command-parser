@@ -34,11 +34,18 @@ class CommandParser {
 
     parseInput(args) {
         let commandConfig = this.commandConfigsMap[args[0]];
+        let commandArgs = args.slice(1);
+
+        if(!commandConfig){
+             commandConfig = this.commandConfigsMap[""];
+            commandArgs = args;
+         }
+
         return {
             options: {
                 logErrors: true
             },
-            command: commandConfig ? this.parseCommandInput(commandConfig, args) : null,
+            command: commandConfig ? this.parseCommandInput(commandConfig, commandArgs) : null,
         }
     }
 
@@ -54,7 +61,7 @@ class CommandParser {
             hasHelpArg,
             invalidArgs,
             options
-        } = this.extractCommandOptions(config.options, args.slice(1));
+        } = this.extractCommandOptions(config.options, args);
         let invalidArgMessage = config.invalidArgMessage || '';
 
         if (hasInvalidArgs) {
