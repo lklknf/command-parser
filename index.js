@@ -21,13 +21,57 @@ class CommandParser {
 
     addCommands(commands){
         this.commandConfigs.push(...this.initCommandConfigs(commands));
-        this.commandConfigsMap = utils.normalize(this.commandConfigs, 'name');
+        this.commandConfigsMap = this.createCommandConfigMap(this.commandConfigs)
+    }
+
+    initCommandConfigs(commandConfigs = []) {
+        if (!Array.isArray(commandConfigs)) {
+            throw Error('Config error: commands have to be an array');
+        }
+
+        return commandConfigs.map(commandConfig => CommandParser.initCommandConfig(commandConfig));
+    }
+
+    static initCommandConfig(commandConfig) {
+        if (typeof commandConfig !== 'object') {
+            throw Error('Config error: a command has to be an object');
+        }
+
+        let {options} = commandConfig;
+
+        if (!Array.isArray(options)) {
+            throw Error('Config error: command options have to be an array');
+        }
+
+        if(!Array.isArray(commandConfig.names) && !(typeof commandConfig.name === 'string')) {
+            throw Error('Config error: command has to have a name array or a name string');
+        }
+
+        if(!Array.isArray(commandConfig.names)){
+            commandConfig.names = [commandConfig.name];
+        }
+
+        return {
+            ...commandConfig,
+            helpMessage: CommandParser.createHelpMessageFromOptions(options),
+        };
+    }
+
+    createCommandConfigMap(commandConfigs){
+        let map = {};
+         commandConfigs.forEach(config=>{
+            config.names.forEach(name=>{
+                map[name] = config;
+            })
+
+        });
+        return map;
     }
 
     getHelpMessage(){
         let helpString = 'Help:\n';
         if (Array.isArray(this.commandConfigs)) {
-            helpString += this.commandConfigs.map(command => command.name).join('\n');
+            helpString += this.commandConfigs.map(command => command.names.join(', ')).join('\n');
         }
         return helpString;
     }
@@ -65,7 +109,7 @@ class CommandParser {
         let invalidArgMessage = config.invalidArgMessage || '';
 
         if (hasInvalidArgs) {
-            invalidArgMessage += '\n' + this.createInvalidArgMessage(invalidArgs);
+            invalidArgMessage += '\n' + CommandParser.createInvalidArgMessage(invalidArgs);
         }
         return {
             hasMissingArgs,
@@ -89,7 +133,6 @@ class CommandParser {
         let invalidArgs = [];
         let options = {};
         while (remainingArgs.length > 0) {
-            let isLastOption = remainingArgs.length === 1;
             let arg = remainingArgs.shift();
 
             if (arg === '--help') {
@@ -148,37 +191,12 @@ class CommandParser {
         }
     }
 
-    initCommandConfigs(commandConfigs = []) {
-        if (!Array.isArray(commandConfigs)) {
-            throw Error('Config error: commands have to be an array');
-        }
 
-        return commandConfigs.map(commandConfig => this.initCommandConfig(commandConfig));
-    }
-
-    initCommandConfig(commandConfig) {
-        if (typeof commandConfig !== 'object') {
-            throw Error('Config error: a command has to be an object');
-        }
-
-        let {options} = commandConfig;
-
-        if (!Array.isArray(options)) {
-            throw Error('Config error: command options have to be an array');
-        }
-
-        return {
-            ...commandConfig,
-            helpMessage: this.createHelpMessageFromOptions(options),
-        };
-    }
-
-
-    createHelpMessageFromOptions(options) {
+    static createHelpMessageFromOptions(options) {
         return 'Command options: ' + options.map(option => option.shortFlag || '' + ' <' + option.name + '>').join(' ');
     }
 
-    createInvalidArgMessage(invalidArgs) {
+    static createInvalidArgMessage(invalidArgs) {
         return invalidArgs.map(obj => 'Invalid Arg. Arg: ' + obj.arg + '  Reason: ' + obj.reason).join('\n');
     }
 

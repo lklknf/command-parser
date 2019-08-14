@@ -3,7 +3,6 @@ const colors = require('colors');
 const readline = require('readline');
 const parse = require('shell-quote').parse;
 const commands = require('./commands');
-
 async function askUserInput(query) {
     const rl = readline.createInterface({
         input: process.stdin,
