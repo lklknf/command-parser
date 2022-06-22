@@ -11,6 +11,6 @@
   "dependencies": {
     "@nnnx/command-parser": "^1.0.0",
     "colors": "^1.3.3",
-    "shell-quote": "^1.6.1"
+    "shell-quote": "^1.7.3"
   }
 }
